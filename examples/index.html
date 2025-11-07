@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>nginx-js Demo</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    .container { max-width: 900px; margin: 0 auto; }
+    h1 { color: #4ec9b0; font-size: 18px; margin-bottom: 20px; }
+    .controls { margin-bottom: 20px; }
+    button {
+      background: #007acc;
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      margin-right: 10px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 13px;
+    }
+    button:hover { background: #005a9e; }
+    .log {
+      background: #252526;
+      border: 1px solid #3e3e42;
+      padding: 15px;
+      height: 500px;
+      overflow-y: auto;
+      font-size: 12px;
+      font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+    }
+    .log-entry {
+      margin-bottom: 4px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .log-entry.request { color: #4ec9b0; }
+    .log-entry.response { color: #6a9955; }
+    .log-entry.error { color: #f48771; }
+    .log-entry.info { color: #9cdcfe; }
+    .stats {
+      display: inline-block;
+      margin-left: 20px;
+      font-size: 12px;
+      color: #858585;
+    }
+    .stats span { margin-right: 15px; }
+    .status {
+      display: inline-block;
+      margin-left: 20px;
+      padding: 4px 8px;
+      background: #6a9955;
+      color: #fff;
+      font-size: 11px;
+      border-radius: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>nginx-js Demo</h1>
+    <div class="controls">
+      <button onclick="testFetch()">Test Fetch</button>
+      <button onclick="testXHR()">Test XHR</button>
+      <button onclick="testWS()">Test WebSocket</button>
+      <button onclick="clearLog()">Clear</button>
+      <span class="stats">
+        <span>Requests: <strong id="reqCount">0</strong></span>
+        <span>Success: <strong id="okCount">0</strong></span>
+        <span>Errors: <strong id="errCount">0</strong></span>
+      </span>
+      <span class="status">Interceptors Active</span>
+    </div>
+    <div class="log" id="log"></div>
+  </div>
+
+  <script src="../dist/index.umd.min.js"></script>
+  <script>
+    // ============================================
+    // UI Helpers
+    // ============================================
+    const stats = { req: 0, ok: 0, err: 0 };
+
+    function log(type, message) {
+      const logEl = document.getElementById('log');
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      logEl.appendChild(entry);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function updateStats() {
+      document.getElementById('reqCount').textContent = stats.req;
+      document.getElementById('okCount').textContent = stats.ok;
+      document.getElementById('errCount').textContent = stats.err;
+    }
+
+    function clearLog() {
+      document.getElementById('log').innerHTML = '';
+      stats.req = 0;
+      stats.ok = 0;
+      stats.err = 0;
+      updateStats();
+    }
+
+    // ============================================
+    // HTTP Request Handlers
+    // ============================================
+    const httpHandlers = {
+      onBeforeRequest(ctx) {
+        console.log('onBeforeRequest', ctx);
+        stats.req++;
+        updateStats();
+        log('request', `${ctx.type.toUpperCase()} ${ctx.method} ${ctx.url}`);
+      },
+      onBeforeSend(ctx) {
+        console.log('onBeforeSend', ctx);
+        log('info', `${ctx.type.toUpperCase()} sending...`);
+      },
+      onAfterResponse(ctx, res) {
+        console.log('onAfterResponse', ctx, res);
+        stats.ok++;
+        updateStats();
+        log('response', `${ctx.type.toUpperCase()} ${res.status} ${ctx.url} (${res.duration}ms)`);
+      },
+      onComplete(ctx) {
+        console.log('onComplete', ctx);
+        log('info', `${ctx.type.toUpperCase()} completed`);
+      },
+      onError(ctx, err) {
+        stats.err++;
+        updateStats();
+        log('error', `${ctx.type.toUpperCase()} ${ctx.url}: ${err.message}`);
+      }
+    };
+
+    // ============================================
+    // WebSocket Handlers
+    // ============================================
+    const wsHandlers = {
+      onBeforeWebSocketOpen(ctx) {
+        log('info', `WebSocket opening ${ctx.url}`);
+      },
+      onWebSocketOpen(ctx) {
+        log('info', `WebSocket opened ${ctx.url}`);
+      },
+      onBeforeWebSocketSend(ctx, msg) {
+        log('info', `WebSocket sending: ${msg.data}`);
+      },
+      onWebSocketMessage(ctx, msg) {
+        log('info', `WebSocket received: ${msg.data}`);
+      },
+      onWebSocketError(ctx) {
+        log('error', `WebSocket error on ${ctx.url}`);
+      },
+      onWebSocketClose(ctx) {
+        log('info', `WebSocket closed ${ctx.url}`);
+      }
+    };
+
+    // ============================================
+    // Initialize Interceptors
+    // ============================================
+    const interceptor = new NginxJS.InterceptorManager({ debug: false });
+    const pluginManager = interceptor.getPluginManager();
+
+    interceptor
+      .use(new NginxJS.FetchInterceptorPlugin(pluginManager, httpHandlers))
+      .use(new NginxJS.XHRInterceptorPlugin(pluginManager, httpHandlers))
+      .use(new NginxJS.WebSocketInterceptorPlugin(pluginManager, wsHandlers))
+      .start();
+
+    // ============================================
+    // Test Functions
+    // ============================================
+    async function testFetch() {
+      try {
+        const response = await fetch('https://jsonplaceholder.typicode.com/posts/1');
+        await response.json();
+      } catch (error) {
+        // Error handled by interceptor
+      }
+    }
+
+    function testXHR() {
+      const xhr = new XMLHttpRequest();
+      xhr.open('GET', 'https://jsonplaceholder.typicode.com/users/1');
+      xhr.send();
+    }
+
+    function testWS() {
+      const ws = new WebSocket('wss://echo.websocket.org');
+      ws.onopen = () => ws.send('ping');
+      ws.onmessage = () => ws.close();
+    }
+
+    log('info', 'nginx-js ready. Click buttons to test interceptors.');
+  </script>
+</body>
+</html>
+

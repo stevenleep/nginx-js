@@ -1,0 +1,67 @@
+# Source files
+src/
+examples/
+*.ts
+!*.d.ts
+
+# Config files
+tsconfig.json
+rollup.config.js
+.eslintrc*
+.prettierrc*
+.editorconfig
+.babelrc*
+jest.config.*
+*.config.js
+
+# Documentation (kept in npm)
+# README.md
+# LICENSE
+
+# Development files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+.env*
+
+# Testing
+__tests__/
+test/
+tests/
+*.test.ts
+*.test.js
+*.spec.ts
+*.spec.js
+coverage/
+.nyc_output/
+jest.config.*
+
+# Build temp
+*.tsbuildinfo
+*.map
+!dist/**/*.map
+
+# Git
+.git/
+.gitignore
+.gitattributes
+.github/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+
+# Package manager
+package-lock.json
+yarn.lock
+# Keep pnpm-lock.yaml in npm package for reference
+
+# Misc
+*.orig
+*.rej
+.cache/
+

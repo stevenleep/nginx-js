@@ -1,0 +1,6 @@
+# pnpm workspace configuration
+# This project uses pnpm as the package manager
+
+packages:
+  - '.'
+

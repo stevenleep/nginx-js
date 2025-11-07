@@ -1,0 +1,145 @@
+{
+  "name": "nginx-js",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Nginx for JavaScript - A powerful request proxy library for browser with plugin architecture",
+  "keywords": [
+    "nginx",
+    "nginx-js",
+    "gateway",
+    "proxy",
+    "interceptor",
+    "request",
+    "fetch",
+    "xhr",
+    "websocket",
+    "plugin",
+    "middleware",
+    "typescript",
+    "browser"
+  ],
+  "author": {
+    "name": "Steven Lee",
+    "email": "lsw@zstun.com",
+    "url": "https://github.com/stevenleep"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stevenleep/nginx-js.git",
+    "directory": "."
+  },
+  "bugs": {
+    "url": "https://github.com/stevenleep/nginx-js/issues"
+  },
+  "homepage": "https://github.com/stevenleep/nginx-js#readme",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./interceptors": {
+      "import": "./dist/interceptors/index.esm.js",
+      "require": "./dist/interceptors/index.js",
+      "types": "./dist/interceptors/index.d.ts"
+    },
+    "./interceptors/*": {
+      "import": "./dist/interceptors/*.esm.js",
+      "require": "./dist/interceptors/*.js",
+      "types": "./dist/interceptors/*.d.ts"
+    },
+    "./plugins": {
+      "import": "./dist/plugins/index.esm.js",
+      "require": "./dist/plugins/index.js",
+      "types": "./dist/plugins/index.d.ts"
+    },
+    "./plugins/*": {
+      "import": "./dist/plugins/*.esm.js",
+      "require": "./dist/plugins/*.js",
+      "types": "./dist/plugins/*.d.ts"
+    },
+    "./core": {
+      "import": "./dist/core/index.esm.js",
+      "require": "./dist/core/index.js",
+      "types": "./dist/core/index.d.ts"
+    },
+    "./core/*": {
+      "import": "./dist/core/*.esm.js",
+      "require": "./dist/core/*.js",
+      "types": "./dist/core/*.d.ts"
+    },
+    "./features": {
+      "import": "./dist/features/index.esm.js",
+      "require": "./dist/features/index.js",
+      "types": "./dist/features/index.d.ts"
+    },
+    "./features/*": {
+      "import": "./dist/features/*.esm.js",
+      "require": "./dist/features/*.js",
+      "types": "./dist/features/*.d.ts"
+    },
+    "./utils": {
+      "import": "./dist/utils/index.esm.js",
+      "require": "./dist/utils/index.js",
+      "types": "./dist/utils/index.d.ts"
+    },
+    "./utils/*": {
+      "import": "./dist/utils/*.esm.js",
+      "require": "./dist/utils/*.js",
+      "types": "./dist/utils/*.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "build:watch": "rollup -c -w",
+    "build:prod": "NODE_ENV=production rollup -c",
+    "dev": "pnpm run build:watch",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "format": "prettier --write \"src/**/*.{ts,json,md}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,json,md}\"",
+    "check": "pnpm run type-check && pnpm run lint && pnpm run format:check",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "pnpm run clean && pnpm run check && pnpm run build:prod",
+    "prepack": "pnpm run build"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^25.0.7",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^11.1.5",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "eslint": "^8.56.0",
+    "prettier": "^3.2.4",
+    "rollup": "^4.9.0",
+    "rollup-plugin-dts": "^6.1.0",
+    "tslib": "^2.8.1",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=14.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "sideEffects": false,
+  "funding": {
+    "type": "individual",
+    "url": "https://github.com/sponsors/stevenleep"
+  }
+}

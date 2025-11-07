@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>nginx-js Advanced Demo</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    h1 { color: #4ec9b0; font-size: 18px; margin-bottom: 10px; }
+    h2 { color: #9cdcfe; font-size: 14px; margin: 20px 0 10px 0; }
+    .controls { margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    button {
+      background: #007acc;
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 13px;
+      border-radius: 3px;
+    }
+    button:hover { background: #005a9e; }
+    button.danger { background: #f48771; }
+    button.danger:hover { background: #d32f2f; }
+    .stats {
+      display: flex;
+      gap: 20px;
+      margin-left: auto;
+      font-size: 12px;
+      color: #858585;
+    }
+    .stats span { margin-right: 15px; }
+    .status {
+      padding: 4px 8px;
+      background: #6a9955;
+      color: #fff;
+      font-size: 11px;
+      border-radius: 2px;
+    }
+    .panels {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .panel {
+      background: #252526;
+      border: 1px solid #3e3e42;
+      padding: 15px;
+      border-radius: 3px;
+    }
+    .panel h3 {
+      color: #4ec9b0;
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+    .log {
+      background: #252526;
+      border: 1px solid #3e3e42;
+      padding: 15px;
+      height: 400px;
+      overflow-y: auto;
+      font-size: 11px;
+      font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+      border-radius: 3px;
+    }
+    .log-entry {
+      margin-bottom: 4px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .log-entry.request { color: #4ec9b0; }
+    .log-entry.response { color: #6a9955; }
+    .log-entry.error { color: #f48771; }
+    .log-entry.info { color: #9cdcfe; }
+    .log-entry.warn { color: #ce9178; }
+    .log-entry.mock { color: #c586c0; }
+    .log-entry.rate-limit { color: #dcdcaa; }
+    .log-entry.circuit { color: #f48771; }
+    .info-item {
+      margin: 5px 0;
+      font-size: 11px;
+    }
+    .info-label { color: #858585; }
+    .info-value { color: #d4d4d4; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>nginx-js Advanced Demo</h1>
+    <p style="color: #858585; font-size: 12px; margin-bottom: 20px;">
+      Demonstrates Router, LoadBalancer, RateLimiter, CircuitBreaker, and MockServer
+    </p>
+
+    <div class="controls">
+      <button onclick="testApi('/api/users/1')">Test API 1</button>
+      <button onclick="testApi('/api/users/2')">Test API 2</button>
+      <button onclick="testApi('/api/posts/1')">Test API 3</button>
+      <button onclick="testApi('/api/mock/data')">Test Mock</button>
+      <button onclick="testRateLimit()">Test Rate Limit</button>
+      <button onclick="testCircuitBreaker()">Test Circuit Breaker</button>
+      <button onclick="clearLog()">Clear</button>
+      <span class="stats">
+        <span>Requests: <strong id="reqCount">0</strong></span>
+        <span>Success: <strong id="okCount">0</strong></span>
+        <span>Errors: <strong id="errCount">0</strong></span>
+        <span>Rate Limited: <strong id="rateLimitCount">0</strong></span>
+        <span>Circuit Open: <strong id="circuitOpenCount">0</strong></span>
+      </span>
+      <span class="status">Active</span>
+    </div>
+
+    <div class="panels">
+      <div class="panel">
+        <h3>Features Status</h3>
+        <div class="info-item">
+          <span class="info-label">Router:</span>
+          <span class="info-value" id="routerStatus">Active</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">LoadBalancer:</span>
+          <span class="info-value" id="loadBalancerStatus">Round Robin</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">RateLimiter:</span>
+          <span class="info-value" id="rateLimiterStatus">10 req/min</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">CircuitBreaker:</span>
+          <span class="info-value" id="circuitBreakerStatus">Closed</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">MockServer:</span>
+          <span class="info-value" id="mockServerStatus">3 rules</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Backend Servers</h3>
+        <div id="serverList"></div>
+      </div>
+    </div>
+
+    <h2>Request Log</h2>
+    <div class="log" id="log"></div>
+  </div>
+
+  <script src="../dist/index.umd.min.js"></script>
+  <script>
+    // ============================================
+    // Statistics
+    // ============================================
+    const stats = {
+      req: 0,
+      ok: 0,
+      err: 0,
+      rateLimited: 0,
+      circuitOpen: 0
+    };
+
+    // ============================================
+    // UI Helpers
+    // ============================================
+    function log(type, message) {
+      const logEl = document.getElementById('log');
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      logEl.appendChild(entry);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function updateStats() {
+      document.getElementById('reqCount').textContent = stats.req;
+      document.getElementById('okCount').textContent = stats.ok;
+      document.getElementById('errCount').textContent = stats.err;
+      document.getElementById('rateLimitCount').textContent = stats.rateLimited;
+      document.getElementById('circuitOpenCount').textContent = stats.circuitOpen;
+    }
+
+    function clearLog() {
+      document.getElementById('log').innerHTML = '';
+      stats.req = 0;
+      stats.ok = 0;
+      stats.err = 0;
+      stats.rateLimited = 0;
+      stats.circuitOpen = 0;
+      updateStats();
+    }
+
+    function updateServerList() {
+      const serverList = document.getElementById('serverList');
+      serverList.innerHTML = '';
+      loadBalancer.servers.forEach((server, index) => {
+        const div = document.createElement('div');
+        div.className = 'info-item';
+        div.innerHTML = `
+          <span class="info-label">Server ${index + 1}:</span>
+          <span class="info-value" style="color: ${server.healthy ? '#6a9955' : '#f48771'}">
+            ${server.url} (${server.healthy ? 'healthy' : 'unhealthy'})
+          </span>
+        `;
+        serverList.appendChild(div);
+      });
+    }
+
+    // ============================================
+    // Initialize Features
+    // ============================================
+
+    // 1. Router - Route requests to different backends
+    const router = NginxJS.createRouter()
+      .addRule({
+        name: 'api-users',
+        pattern: /^\/api\/users\/(.+)$/,
+        target: (ctx, matches) => {
+          const userId = matches?.[1];
+          const server = loadBalancer.getNextServer(ctx);
+          return server ? `${server.url}/users/${userId}` : ctx.url;
+        },
+        type: 'rewrite'
+      })
+      .addRule({
+        name: 'api-posts',
+        pattern: /^\/api\/posts\/(.+)$/,
+        target: (ctx, matches) => {
+          const postId = matches?.[1];
+          const server = loadBalancer.getNextServer(ctx);
+          return server ? `${server.url}/posts/${postId}` : ctx.url;
+        },
+        type: 'rewrite'
+      })
+      .build();
+
+    // 2. LoadBalancer - Distribute requests across multiple servers
+    const loadBalancer = new NginxJS.LoadBalancer(NginxJS.BalanceStrategy.ROUND_ROBIN);
+    loadBalancer.addServer({ url: 'https://jsonplaceholder.typicode.com', weight: 3 });
+    loadBalancer.addServer({ url: 'https://jsonplaceholder.typicode.com', weight: 2 });
+    loadBalancer.addServer({ url: 'https://jsonplaceholder.typicode.com', weight: 1 });
+
+    // 3. RateLimiter - Limit request rate
+    const rateLimiter = new NginxJS.RateLimiter({
+      algorithm: NginxJS.RateLimitAlgorithm.SLIDING_WINDOW,
+      windowMs: 60000, // 1 minute
+      maxRequests: 10,
+      keyGenerator: (ctx) => ctx.url.split('?')[0], // Rate limit by URL path
+      onLimitReached: (ctx) => {
+        stats.rateLimited++;
+        updateStats();
+        log('rate-limit', `Rate limit exceeded for ${ctx.url}`);
+      }
+    });
+
+    // 4. CircuitBreaker - Prevent cascading failures
+    const circuitBreaker = new NginxJS.CircuitBreaker({
+      failureThreshold: 0.5, // 50% failure rate
+      successThreshold: 3,
+      timeout: 5000, // 5 seconds
+      resetTimeout: 30000 // 30 seconds
+    });
+
+    // 5. MockServer - Mock responses for testing
+    const mockServer = new NginxJS.MockServer();
+    mockServer.addRule({
+      name: 'mock-data',
+      pattern: /^\/api\/mock\/data$/,
+      method: 'GET',
+      response: {
+        message: 'This is a mocked response',
+        timestamp: () => new Date().toISOString(),
+        data: {
+          id: 1,
+          name: 'Mocked Data',
+          value: Math.random()
+        }
+      },
+      delay: 100,
+      status: 200
+    });
+    mockServer.addRule({
+      name: 'mock-error',
+      pattern: /^\/api\/mock\/error$/,
+      response: {
+        error: 'Mocked error response'
+      },
+      status: 500
+    });
+    mockServer.addRule({
+      name: 'mock-delay',
+      pattern: /^\/api\/mock\/delay$/,
+      response: { message: 'Delayed response' },
+      delay: 2000
+    });
+
+    // ============================================
+    // Request Handlers
+    // ============================================
+    const httpHandlers = {
+      onBeforeRequest(ctx) {
+        stats.req++;
+        updateStats();
+
+        // Check rate limit
+        if (!rateLimiter.allowRequest(ctx)) {
+          stats.rateLimited++;
+          updateStats();
+          log('rate-limit', `Rate limited: ${ctx.method} ${ctx.url}`);
+          throw new Error('Rate limit exceeded');
+        }
+
+        // Check circuit breaker
+        const state = circuitBreaker.getState();
+        if (state === NginxJS.CircuitState.OPEN) {
+          stats.circuitOpen++;
+          updateStats();
+          log('circuit', `Circuit breaker is OPEN: ${ctx.url}`);
+          throw new Error('Circuit breaker is OPEN');
+        }
+        document.getElementById('circuitBreakerStatus').textContent = state;
+
+        // Try mock server first
+        mockServer.match(ctx).then(mockResponse => {
+          if (mockResponse) {
+            log('mock', `Mock response for ${ctx.url}`);
+            return;
+          }
+        }).catch(() => {});
+
+        // Apply router rules
+        const routeMatch = router.match(ctx);
+        if (routeMatch) {
+          ctx.url = routeMatch.targetUrl;
+          log('info', `Routed to: ${routeMatch.targetUrl}`);
+        }
+
+        log('request', `${ctx.method} ${ctx.url}`);
+      },
+
+      onBeforeSend(ctx) {
+        // Select server from load balancer
+        const server = loadBalancer.getNextServer(ctx);
+        if (server) {
+          loadBalancer.incrementConnections(server.url);
+          log('info', `Load balanced to: ${server.url}`);
+        }
+      },
+
+      async onAfterResponse(ctx, res) {
+        stats.ok++;
+        updateStats();
+
+        // Update load balancer
+        const server = loadBalancer.servers.find(s => ctx.url.includes(s.url));
+        if (server) {
+          loadBalancer.decrementConnections(server.url);
+        }
+
+        // Record success for circuit breaker
+        if (res.status >= 200 && res.status < 300) {
+          // Circuit breaker success is handled internally
+        }
+
+        log('response', `${ctx.method} ${ctx.url} → ${res.status} (${res.duration}ms)`);
+      },
+
+      onComplete(ctx) {
+        log('info', `Completed: ${ctx.url}`);
+      },
+
+      onError(ctx, err) {
+        stats.err++;
+        updateStats();
+
+        // Mark server as failed
+        const server = loadBalancer.servers.find(s => ctx.url.includes(s.url));
+        if (server) {
+          loadBalancer.markFailed(server.url);
+          updateServerList();
+        }
+
+        // Record failure for circuit breaker
+        log('error', `${ctx.method} ${ctx.url} → ${err.message}`);
+      }
+    };
+
+    // ============================================
+    // Initialize Interceptors
+    // ============================================
+    const interceptor = new NginxJS.InterceptorManager({ debug: false });
+    const pluginManager = interceptor.getPluginManager();
+
+    interceptor
+      .use(new NginxJS.FetchInterceptorPlugin(pluginManager, httpHandlers))
+      .use(new NginxJS.XHRInterceptorPlugin(pluginManager, httpHandlers))
+      .start();
+
+    // ============================================
+    // Test Functions
+    // ============================================
+    async function testApi(url) {
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        log('response', `Response data: ${JSON.stringify(data).substring(0, 100)}...`);
+      } catch (error) {
+        log('error', `Request failed: ${error.message}`);
+      }
+    }
+
+    async function testRateLimit() {
+      log('info', 'Testing rate limit (sending 15 requests rapidly)...');
+      for (let i = 0; i < 15; i++) {
+        try {
+          await fetch('/api/users/1');
+        } catch (error) {
+          // Expected to fail after rate limit
+        }
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
+
+    async function testCircuitBreaker() {
+      log('info', 'Testing circuit breaker (sending requests to failing endpoint)...');
+      // Simulate failures to trigger circuit breaker
+      for (let i = 0; i < 10; i++) {
+        try {
+          await fetch('/api/mock/error');
+        } catch (error) {
+          // Expected failures
+        }
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+    }
+
+    // ============================================
+    // Initialize UI
+    // ============================================
+    updateServerList();
+    log('info', 'nginx-js advanced demo ready');
+    log('info', 'Features: Router, LoadBalancer, RateLimiter, CircuitBreaker, MockServer');
+  </script>
+</body>
+</html>
+
