@@ -1,0 +1,33 @@
+{
+  "name": "@nginx-js/core",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Core functionality for nginx-js",
+  "main": "./dist/index.js",
+  "module": "./dist/index.esm.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "build:watch": "rollup -c -w",
+    "build:prod": "NODE_ENV=production rollup -c",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@nginx-js/types": "workspace:*",
+    "@nginx-js/utils": "workspace:*"
+  },
+  "license": "MIT"
+}

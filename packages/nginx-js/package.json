@@ -1,0 +1,102 @@
+{
+  "name": "nginx-js",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Nginx for JavaScript - A powerful request proxy library for browser with plugin architecture",
+  "main": "./dist/index.js",
+  "module": "./dist/index.esm.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./interceptors": {
+      "import": "./dist/interceptors/index.esm.js",
+      "require": "./dist/interceptors/index.js",
+      "types": "./dist/interceptors/index.d.ts"
+    },
+    "./plugins": {
+      "import": "./dist/plugins/index.esm.js",
+      "require": "./dist/plugins/index.js",
+      "types": "./dist/plugins/index.d.ts"
+    },
+    "./core": {
+      "import": "./dist/core/index.esm.js",
+      "require": "./dist/core/index.js",
+      "types": "./dist/core/index.d.ts"
+    },
+    "./features": {
+      "import": "./dist/features/index.esm.js",
+      "require": "./dist/features/index.js",
+      "types": "./dist/features/index.d.ts"
+    },
+    "./utils": {
+      "import": "./dist/utils/index.esm.js",
+      "require": "./dist/utils/index.js",
+      "types": "./dist/utils/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "build:watch": "rollup -c -w",
+    "build:prod": "NODE_ENV=production rollup -c",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@nginx-js/types": "workspace:*",
+    "@nginx-js/utils": "workspace:*",
+    "@nginx-js/core": "workspace:*",
+    "@nginx-js/interceptors": "workspace:*",
+    "@nginx-js/features": "workspace:*"
+  },
+  "keywords": [
+    "nginx",
+    "nginx-js",
+    "gateway",
+    "proxy",
+    "interceptor",
+    "request",
+    "fetch",
+    "xhr",
+    "websocket",
+    "plugin",
+    "middleware",
+    "typescript",
+    "browser"
+  ],
+  "author": {
+    "name": "Steven Lee",
+    "email": "lsw@zstun.com",
+    "url": "https://github.com/stevenleep"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stevenleep/nginx-js.git",
+    "directory": "."
+  },
+  "bugs": {
+    "url": "https://github.com/stevenleep/nginx-js/issues"
+  },
+  "homepage": "https://github.com/stevenleep/nginx-js#readme",
+  "engines": {
+    "node": ">=14.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "sideEffects": false
+}

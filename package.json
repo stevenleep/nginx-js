@@ -33,86 +33,25 @@
     "url": "https://github.com/stevenleep/nginx-js/issues"
   },
   "homepage": "https://github.com/stevenleep/nginx-js#readme",
-  "main": "dist/index.js",
-  "module": "dist/index.esm.js",
-  "types": "dist/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist/index.esm.js",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    },
-    "./interceptors": {
-      "import": "./dist/interceptors/index.esm.js",
-      "require": "./dist/interceptors/index.js",
-      "types": "./dist/interceptors/index.d.ts"
-    },
-    "./interceptors/*": {
-      "import": "./dist/interceptors/*.esm.js",
-      "require": "./dist/interceptors/*.js",
-      "types": "./dist/interceptors/*.d.ts"
-    },
-    "./plugins": {
-      "import": "./dist/plugins/index.esm.js",
-      "require": "./dist/plugins/index.js",
-      "types": "./dist/plugins/index.d.ts"
-    },
-    "./plugins/*": {
-      "import": "./dist/plugins/*.esm.js",
-      "require": "./dist/plugins/*.js",
-      "types": "./dist/plugins/*.d.ts"
-    },
-    "./core": {
-      "import": "./dist/core/index.esm.js",
-      "require": "./dist/core/index.js",
-      "types": "./dist/core/index.d.ts"
-    },
-    "./core/*": {
-      "import": "./dist/core/*.esm.js",
-      "require": "./dist/core/*.js",
-      "types": "./dist/core/*.d.ts"
-    },
-    "./features": {
-      "import": "./dist/features/index.esm.js",
-      "require": "./dist/features/index.js",
-      "types": "./dist/features/index.d.ts"
-    },
-    "./features/*": {
-      "import": "./dist/features/*.esm.js",
-      "require": "./dist/features/*.js",
-      "types": "./dist/features/*.d.ts"
-    },
-    "./utils": {
-      "import": "./dist/utils/index.esm.js",
-      "require": "./dist/utils/index.js",
-      "types": "./dist/utils/index.d.ts"
-    },
-    "./utils/*": {
-      "import": "./dist/utils/*.esm.js",
-      "require": "./dist/utils/*.js",
-      "types": "./dist/utils/*.d.ts"
-    },
-    "./package.json": "./package.json"
-  },
+  "private": true,
   "files": [
-    "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "packages"
   ],
   "scripts": {
-    "build": "rollup -c",
-    "build:watch": "rollup -c -w",
-    "build:prod": "NODE_ENV=production rollup -c",
-    "dev": "pnpm run build:watch",
-    "type-check": "tsc --noEmit",
-    "lint": "eslint src --ext .ts",
-    "lint:fix": "eslint src --ext .ts --fix",
-    "format": "prettier --write \"src/**/*.{ts,json,md}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,json,md}\"",
+    "build": "pnpm -r build",
+    "build:watch": "pnpm -r build:watch",
+    "build:prod": "pnpm -r build:prod",
+    "dev": "pnpm -r build:watch",
+    "type-check": "pnpm -r type-check",
+    "lint": "pnpm -r lint",
+    "lint:fix": "pnpm -r lint:fix",
+    "format": "prettier --write \"**/*.{ts,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,json,md}\"",
     "check": "pnpm run type-check && pnpm run lint && pnpm run format:check",
-    "clean": "rm -rf dist",
-    "prepublishOnly": "pnpm run clean && pnpm run check && pnpm run build:prod",
-    "prepack": "pnpm run build"
+    "clean": "pnpm -r clean",
+    "prepublishOnly": "echo 'This is a monorepo. Publish individual packages instead.' && exit 1"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^25.0.7",

@@ -1,11 +1,4 @@
-# nginx-js
-
-Nginx-like request proxy for browsers with plugin architecture
-
-[![npm version](https://img.shields.io/npm/v/nginx-js)](https://www.npmjs.com/package/nginx-js)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-
-## Overview
+# nginx-js 
 
 nginx-js provides a comprehensive solution for intercepting and managing network requests in browser environments. Built with a plugin-based architecture, it offers enterprise-grade features including routing, load balancing, rate limiting, and circuit breaking.
 
@@ -16,14 +9,6 @@ nginx-js provides a comprehensive solution for intercepting and managing network
 **Plugin Architecture** - Extensible plugin system for custom interceptors and business logic
 
 **Enterprise Features** - Router, LoadBalancer, RateLimiter, CircuitBreaker, MockServer
-
-## Use Cases
-
-- **API Gateway** - Route requests, load balance, and manage multiple backends
-- **Request Monitoring** - Log, trace, and analyze all network traffic
-- **Development Mocking** - Mock API responses for testing and development
-- **Rate Limiting & Protection** - Prevent abuse with rate limiting and circuit breakers
-- **Request Transformation** - Modify headers, rewrite URLs, add authentication
 
 ## Notice
 
@@ -38,11 +23,7 @@ npm install nginx-js
 ## Quick Start
 
 ```typescript
-import {
-  InterceptorManager,
-  FetchInterceptorPlugin,
-  XHRInterceptorPlugin,
-} from 'nginx-js';
+import { InterceptorManager, FetchInterceptorPlugin, XHRInterceptorPlugin } from 'nginx-js';
 
 const interceptor = new InterceptorManager({
   onBeforeRequest: (ctx) => console.log(`Request: ${ctx.method} ${ctx.url}`),
@@ -79,7 +60,7 @@ const router = createRouter()
 onBeforeRequest: (ctx) => {
   const match = router.match(ctx);
   if (match) ctx.url = match.targetUrl;
-}
+};
 ```
 
 ### LoadBalancer - Distribute Traffic
@@ -139,7 +120,7 @@ import { BasePlugin } from 'nginx-js/plugins';
 
 class AuthPlugin extends BasePlugin {
   name = 'auth-plugin';
-  
+
   async beforeRequest(ctx: RequestContext) {
     ctx.headers['Authorization'] = `Bearer ${token}`;
     return ctx;

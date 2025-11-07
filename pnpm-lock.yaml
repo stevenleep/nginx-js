@@ -45,6 +45,62 @@ importers:
         specifier: ^5.3.3
         version: 5.9.3
 
+  packages/core:
+    dependencies:
+      '@nginx-js/types':
+        specifier: workspace:*
+        version: link:../types
+      '@nginx-js/utils':
+        specifier: workspace:*
+        version: link:../utils
+
+  packages/features:
+    dependencies:
+      '@nginx-js/types':
+        specifier: workspace:*
+        version: link:../types
+      '@nginx-js/utils':
+        specifier: workspace:*
+        version: link:../utils
+
+  packages/interceptors:
+    dependencies:
+      '@nginx-js/core':
+        specifier: workspace:*
+        version: link:../core
+      '@nginx-js/types':
+        specifier: workspace:*
+        version: link:../types
+      '@nginx-js/utils':
+        specifier: workspace:*
+        version: link:../utils
+
+  packages/nginx-js:
+    dependencies:
+      '@nginx-js/core':
+        specifier: workspace:*
+        version: link:../core
+      '@nginx-js/features':
+        specifier: workspace:*
+        version: link:../features
+      '@nginx-js/interceptors':
+        specifier: workspace:*
+        version: link:../interceptors
+      '@nginx-js/types':
+        specifier: workspace:*
+        version: link:../types
+      '@nginx-js/utils':
+        specifier: workspace:*
+        version: link:../utils
+
+  packages/types: {}
+
+  packages/utils:
+    dependencies:
+      '@nginx-js/types':
+        specifier: workspace:*
+        version: link:../types
+
 packages:
 
   /@babel/code-frame@7.27.1:

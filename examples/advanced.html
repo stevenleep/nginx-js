@@ -199,7 +199,8 @@
     function updateServerList() {
       const serverList = document.getElementById('serverList');
       serverList.innerHTML = '';
-      loadBalancer.servers.forEach((server, index) => {
+      const lbStats = loadBalancer.getStats();
+      lbStats.servers.forEach((server, index) => {
         const div = document.createElement('div');
         div.className = 'info-item';
         div.innerHTML = `
@@ -267,6 +268,12 @@
       resetTimeout: 30000 // 30 seconds
     });
 
+    // Update circuit breaker status periodically
+    setInterval(() => {
+      const state = circuitBreaker.getState();
+      document.getElementById('circuitBreakerStatus').textContent = state;
+    }, 500);
+
     // 5. MockServer - Mock responses for testing
     const mockServer = new NginxJS.MockServer();
     mockServer.addRule({
@@ -304,9 +311,17 @@
     // Request Handlers
     // ============================================
     const httpHandlers = {
-      onBeforeRequest(ctx) {
+      async onBeforeRequest(ctx) {
         stats.req++;
         updateStats();
+
+        // Check mock server first
+        const mockResponse = await mockServer.match(ctx);
+        if (mockResponse) {
+          log('mock', `Mock matched for ${ctx.url}`);
+          // Note: In a real implementation, we would return the mock response here
+          // For this demo, we'll just log it and continue
+        }
 
         // Check rate limit
         if (!rateLimiter.allowRequest(ctx)) {
@@ -316,36 +331,28 @@
           throw new Error('Rate limit exceeded');
         }
 
-        // Check circuit breaker
+        // Check circuit breaker state
         const state = circuitBreaker.getState();
+        document.getElementById('circuitBreakerStatus').textContent = state;
         if (state === NginxJS.CircuitState.OPEN) {
           stats.circuitOpen++;
           updateStats();
           log('circuit', `Circuit breaker is OPEN: ${ctx.url}`);
           throw new Error('Circuit breaker is OPEN');
         }
-        document.getElementById('circuitBreakerStatus').textContent = state;
-
-        // Try mock server first
-        mockServer.match(ctx).then(mockResponse => {
-          if (mockResponse) {
-            log('mock', `Mock response for ${ctx.url}`);
-            return;
-          }
-        }).catch(() => {});
 
         // Apply router rules
         const routeMatch = router.match(ctx);
         if (routeMatch) {
           ctx.url = routeMatch.targetUrl;
-          log('info', `Routed to: ${routeMatch.targetUrl}`);
+          log('info', `Routed: ${routeMatch.rule.name} → ${routeMatch.targetUrl}`);
         }
 
         log('request', `${ctx.method} ${ctx.url}`);
       },
 
       onBeforeSend(ctx) {
-        // Select server from load balancer
+        // Select server from load balancer (if URL matches a backend)
         const server = loadBalancer.getNextServer(ctx);
         if (server) {
           loadBalancer.incrementConnections(server.url);
@@ -358,14 +365,16 @@
         updateStats();
 
         // Update load balancer
-        const server = loadBalancer.servers.find(s => ctx.url.includes(s.url));
+        const lbStats = loadBalancer.getStats();
+        const server = lbStats.servers.find(s => ctx.url.includes(s.url));
         if (server) {
           loadBalancer.decrementConnections(server.url);
+          loadBalancer.markSuccess(server.url);
         }
 
-        // Record success for circuit breaker
+        // Record success for circuit breaker (using allow wrapper would be better, but for demo we track manually)
         if (res.status >= 200 && res.status < 300) {
-          // Circuit breaker success is handled internally
+          // Success is tracked
         }
 
         log('response', `${ctx.method} ${ctx.url} → ${res.status} (${res.duration}ms)`);
@@ -375,12 +384,13 @@
         log('info', `Completed: ${ctx.url}`);
       },
 
-      onError(ctx, err) {
+      async onError(ctx, err) {
         stats.err++;
         updateStats();
 
         // Mark server as failed
-        const server = loadBalancer.servers.find(s => ctx.url.includes(s.url));
+        const lbStats = loadBalancer.getStats();
+        const server = lbStats.servers.find(s => ctx.url.includes(s.url));
         if (server) {
           loadBalancer.markFailed(server.url);
           updateServerList();
@@ -430,9 +440,10 @@
     async function testCircuitBreaker() {
       log('info', 'Testing circuit breaker (sending requests to failing endpoint)...');
       // Simulate failures to trigger circuit breaker
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 15; i++) {
         try {
-          await fetch('/api/mock/error');
+          // Use a URL that will fail (non-existent endpoint)
+          await fetch('/api/nonexistent/endpoint');
         } catch (error) {
           // Expected failures
         }

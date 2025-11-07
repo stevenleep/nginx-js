@@ -3,6 +3,7 @@
 ## Running the Demos
 
 1. Build the project:
+
    ```bash
    pnpm run build:prod
    ```
@@ -20,6 +21,7 @@ Demonstrates how nginx-js intercepts different types of network requests:
 - **WebSocket**: Intercepts WebSocket connections
 
 Each interceptor plugin only handles its own relevant hooks:
+
 - HTTP interceptors (Fetch, XHR) handle HTTP request/response hooks
 - WebSocket interceptor handles WebSocket-specific hooks
 
@@ -68,4 +70,3 @@ Demonstrates all nginx-js features working together:
 - **Test API**: Normal requests through the full pipeline
 - **Test Rate Limit**: Sends 15 rapid requests to trigger rate limiting
 - **Test Circuit Breaker**: Sends requests to failing endpoint to trigger circuit breaker
-
